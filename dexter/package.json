@@ -1,0 +1,147 @@
+{
+	"name": "dexter",
+	"displayName": "Dexter",
+	"description": "Code completion using OpenAI's codex. Bring your own key.",
+	"version": "0.0.1",
+	"engines": {
+		"vscode": "^1.60.0"
+	},
+	"categories": [
+		"Other"
+	],
+	"activationEvents": [
+		"*"
+	],
+	"main": "./out/extension.js",
+	"contributes": {
+		"commands": [
+			{
+				"command": "dexter.addCodexContext",
+				"category": "Dexter",
+				"title": "Add selected text to codex context"
+			},
+			{
+				"command": "dexter.showCodexContext",
+				"category": "Dexter",
+				"title": "Add selected text to codex context"
+			},
+			{
+				"command": "dexter.clearCodex",
+				"category": "Dexter",
+				"title": "Clear codex context, query and stop sequences"
+			},
+			{
+				"command": "dexter.setCodexResLength",
+				"category": "Dexter",
+				"title": "Set Codex response length"
+			},
+			{
+				"command": "dexter.runCodeCompletion",
+				"category": "Dexter",
+				"title": "Run code completion on selected text using Codex"
+			},
+			{
+				"command": "dexter.insertCodeCompletion",
+				"category": "Dexter",
+				"title": "Enter query to complete using Codex"
+			},
+			{
+				"command": "dexter.setStopSequences",
+				"category": "Dexter",
+				"title": "View and set the active stop sequences."
+			}
+		],
+		"configuration": {
+			"title": "Dexter",
+			"properties": {
+				"dexter.apiKey": {
+					"type": "string",
+					"default": "",
+					"description": "OpenAI API Key. Must have access to Codex-Beta"
+				},
+				"dexter.engine": {
+					"type": "string",
+					"default": "davinci-codex",
+					"enum": [
+						"davinci-codex",
+						"cushman-codex"
+					],
+					"description": "Which engine to use. Considering adding GPT-3 support in the future"
+				},
+				"dexter.responseLength": {
+					"type": "integer",
+					"default": "64",
+					"description": "Number of tokens to limit the response to. (1-4096 Def. 64)"
+				},
+				"dexter.temperature": {
+					"type": "number",
+					"default": "0",
+					"description": "Controls randomness. The lower the number, the more deterministic and repetitive. (0-1 Def. 0)"
+				},
+				"dexter.topP": {
+					"type": "number",
+					"default": "1",
+					"description": "Controls diversity of selection. 0.5 means that half of all weighted options are considered. (0-1 Def. 1)"
+				},
+				"dexter.frequencyPenalty": {
+					"type": "number",
+					"default": "0",
+					"description": "How much to penalize new tokens based on their frequency in the text so far. (0-2 Def. 0)"
+				},
+				"dexter.presencePenalty": {
+					"type": "number",
+					"default": "0",
+					"description": "How much to penalize new tokens based on whether they appear in the text. (0-2 Def. 0)"
+				},
+				"dexter.bestOf": {
+					"type": "integer",
+					"default": "1",
+					"description": "Generates multiple queries and picks the best one (1-20 Def. 1)"
+				},
+				"dexter.stopSequences": {
+					"type": "string",
+					"default": "",
+					"description": "Up to 4 sequences (separated by /|. represent newline as ↵) that the model will end the output at."
+				},
+				"dexter.replaceHighlight": {
+					"type": "boolean",
+					"default": false,
+					"description": "When highlighting one or more lines of text before code completion, replace the highlighted text with the output. Otherwise append it after the last selected character."
+				},
+				"dexter.sameCompletion": {
+					"type": "boolean",
+					"default": false,
+					"description": "When selecting multiple lines of text to complete, append the same output to the document. Otherwise, run a new query for each completion"
+				},
+				"dexter.sequentialCompletion": {
+					"type": "boolean",
+					"default": true,
+					"description": "Pipe each output back into the input "
+				}
+
+			}
+		}
+	},
+	"scripts": {
+		"vscode:prepublish": "npm run compile",
+		"compile": "tsc -p ./",
+		"watch": "tsc -watch -p ./",
+		"pretest": "npm run compile && npm run lint",
+		"lint": "eslint src --ext ts",
+		"test": "node ./out/test/runTest.js"
+	},
+	"devDependencies": {
+		"@types/vscode": "^1.60.0",
+		"@types/glob": "^7.1.4",
+		"@types/mocha": "^9.0.0",
+		"@types/node": "14.x",
+		"@typescript-eslint/eslint-plugin": "^4.31.1",
+		"@typescript-eslint/parser": "^4.31.1",
+		"eslint": "^7.32.0",
+		"glob": "^7.1.7",
+		"mocha": "^9.1.1",
+		"typescript": "^4.4.3",
+		"@vscode/test-electron": "^1.6.2"
+	},
+	"dependencies": {}
+}
