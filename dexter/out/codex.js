@@ -1,11 +1,10 @@
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.Codex = void 0;
-const vscode = require("vscode");
 class Codex {
     constructor(apiKey) {
         this.context = '';
-        this.query = '';
+        this.queries = [];
         this.resLength = 64;
         this.temp = 0;
         this.topp = 1;
@@ -30,10 +29,10 @@ class Codex {
         return this.context || "";
     }
     addQuery(query) {
-        this.query = query;
+        this.queries?.push(query);
     }
-    clearQuery() {
-        this.query = "";
+    clearQueries() {
+        this.queries = [];
     }
     setBestOf(bestOf) {
         this.bestOf = bestOf;
@@ -94,6 +93,10 @@ class Codex {
         }
     }
     setStopSequences(sequence) {
+        if (sequence.length === 0) {
+            this.stopSequences = [];
+            return;
+        }
         this.stopSequences = sequence.split("/|").filter(function (val, index) {
             return index < 4;
         });
@@ -101,47 +104,53 @@ class Codex {
     clearStopSequences() {
         this.stopSequences = [];
     }
-    async complete(appendResultAndQueryToContext) {
-        if (!this.context || !this.query) {
-            vscode.window.showErrorMessage("Codex: No Query Provided");
-            return '';
-        }
+    getStopSequences() {
+        return this.stopSequences;
+    }
+    async complete() {
         const headers = {
             'Content-Type': 'application/json',
             'Authorization': `Bearer ${this.key}`
         };
-        const data = {
-            "prompt": this.context + '\n\n' + this.query,
-            "max_tokens": this.resLength,
-            "temperature": this.temp,
-            "top_p": this.topp,
-            "n": this.bestOf,
-            "stream": false,
-            "logprobs": null,
-            "stop": this.stopSequences
-        };
-        await fetch('https://api.openai.com/v1/engines/davinci-codex/completions', {
-            method: "POST",
-            headers: headers,
-            body: JSON.stringify(data)
-        })
-            .then((response) => {
-            if (response.status === 200) {
-                return response.json().then((body) => {
-                    const result = body.choices[0].text;
-                    if (appendResultAndQueryToContext) {
-                        this.addContext(result);
-                        this.clearQuery();
-                    }
-                    return result;
-                }).catch();
-            }
-            ;
-        }).catch(err => {
-            vscode.window.showErrorMessage(err.message);
-            return '';
+        var requests = [];
+        this.queries?.forEach(async (query) => {
+            const data = {
+                "prompt": this.context + '\n\n' + query,
+                "max_tokens": this.resLength,
+                "temperature": this.temp,
+                "top_p": this.topp,
+                "n": this.bestOf,
+                "stream": false,
+                "logprobs": null,
+                "stop": this.stopSequences
+            };
+            requests.push(fetch('https://api.openai.com/v1/engines/davinci-codex/completions', {
+                method: "POST",
+                headers: headers,
+                body: JSON.stringify(data)
+            }));
         });
-        return '';
+        var strings = [];
+        await Promise.all(requests).then((values) => {
+            values.forEach(async (value) => {
+                if (value.status === 200) {
+                    await value.json().then((body) => {
+                        strings.push(body.choices[0].text);
+                    }).catch();
+                }
+                else if (value.status === 401) {
+                    strings.push('UNAUTHORIZED');
+                }
+                else {
+                    strings.push('ERROR');
+                    await value.json().then((body) => {
+                        strings.push(`${value.status} - ${body.error.message}`);
+                    }).catch();
+                }
+            });
+        });
+        this.clearQueries();
+        return strings;
     }
 }
 exports.Codex = Codex;

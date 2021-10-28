@@ -86,18 +86,25 @@ export function activate(context: vscode.ExtensionContext) {
 		})
 	)
 
-	function appendText(text: string) {
+	function appendTextAfterLine(text: string, selection: vscode.Selection) {
 		vscode.commands.registerTextEditorCommand('dexter.insertText', function (editor, edit, args) {
-			edit.insert(editor.selection.end, text)
+			const currentLine = editor.document.lineAt(selection.start.line)
+			edit.insert(currentLine.range.end, '\n')
+			edit.insert(currentLine.range.start.translate(1), text);
 		})
 	}
 
-	function replaceText(text: string) {
+	function replaceTextAtSelection(text: string, selection: vscode.Selection) {
 		vscode.commands.registerTextEditorCommand('dexter.insertText', function (editor, edit, args) {
-			edit.replace(editor.selection.end, text)
+			edit.replace(selection.active, text);
 		})
 	} 
-
+	context.subscriptions.push(
+		vscode.commands.registerCommand('dexter.showCodexContext', () => {
+			vscode.window.showInformationMessage(codex.getContext());
+			vscode.window.showInformationMessage(`Response Length: ${codex.resLength} \nTemperature: ${codex.temp} \nTop P: ${codex.topp} \nFrequency Penalty: ${codex.freqPenalty} \nPresence Penalty: ${codex.presPenalty} \n Best of: ${codex.bestOf} \nStop Sequences: ${codex.stopSequences?.join(',')}`)
+		})
+	)
 	context.subscriptions.push(
 		vscode.commands.registerCommand('dexter.runCodeCompletion', async () => {
 			const key = vscode.workspace.getConfiguration('dexter').get('apiKey', false);
@@ -113,29 +120,23 @@ export function activate(context: vscode.ExtensionContext) {
 					vscode.window.showInformationMessage("No open editor")
 				} else {
 					const selections = editor.selections;
-					const replaceHighlight = vscode.workspace.getConfiguration('dexter').get('replaceHighlight');
 					const sameCompletion = vscode.workspace.getConfiguration('dexter').get('sameCompletion');
 
-					var insertText = replaceHighlight ? appendText : replaceText;
-					//append if one or more selections contain characters
-					var appendResult = !selections.every((value) => { return value.isEmpty; });
-					
 					await codex.complete().then(result => {
 						if (result.includes('UNAUTHORIZED')){ //displayed if no output is generated (complete returns empty list)
 							vscode.window.showErrorMessage('Bad API key');
 						} else if (result.includes('ERROR')) {
 							vscode.window.showInformationMessage('One or more errors occurred ')
 						}
-						selections.sort((a, b) => { 
-							return a.active.compareTo(b.active);
-						}).reverse().forEach((selection, index) => {
+						selections.sort((a, b) => { return a.active.compareTo(b.active); })
+						.reverse().forEach((selection, index) => {
 							codex.addQuery(editor.document.getText(selection));
 							if (index === 0 || sameCompletion) {
 								//result should ALWAYS be the same length as selections
-								insertText(result[index]);
+								appendTextAfterLine(result[index] || '', selection);
 							} else {
 								codex.complete().then(result => {
-									insertText(result[index]);
+									appendTextAfterLine(result[index] || '', selection);
 								})
 							}
 						})
@@ -145,7 +146,52 @@ export function activate(context: vscode.ExtensionContext) {
 			}
 		})
 	);
-//const line = editor.document.lineAt(selection.start.line).text;
+	context.subscriptions.push(
+		vscode.commands.registerCommand('dexter.insertCodeCompletion', async () => {
+			const key = vscode.workspace.getConfiguration('dexter').get('apiKey', false);
+			if (!key) {
+				await vscode.window.showInputBox({
+					title: "Set the OpenAI API key"
+				}).then(input => {
+					vscode.workspace.getConfiguration('dexter').update('apiKey', input);	
+				})
+			} else {
+				const editor = vscode.window.activeTextEditor;
+				if (!editor) {
+					vscode.window.showInformationMessage("No open editor")
+				} else {
+					const selections = editor.selections;
+					const sameCompletion = vscode.workspace.getConfiguration('dexter').get('sameCompletion');
+
+					await vscode.window.showInputBox({
+						title: "Set the query",
+						placeHolder: editor.document.getText(selections[0]),
+						ignoreFocusOut: true
+					}).then(input => { codex.addQuery(input || ''); });
+
+					await codex.complete().then(result => {
+						if (result.includes('UNAUTHORIZED')){ //displayed if no output is generated (complete returns empty list)
+							vscode.window.showErrorMessage('Bad API key');
+						} else if (result.includes('ERROR')) {
+							vscode.window.showInformationMessage('One or more errors occurred ')
+						}
+						selections.sort((a, b) => { return a.active.compareTo(b.active); })
+						.reverse().forEach((selection, index) => {
+							if (index === 0 || sameCompletion) {
+								//result should ALWAYS be the same length as selections
+								replaceTextAtSelection(result[index] || '', selection);
+							} else {
+								codex.complete().then(result => {
+									replaceTextAtSelection(result[index] || '', selection);
+								})
+							}
+						})
+						return;
+					});
+				}
+			}
+		})
+	)
 	context.subscriptions.push(
 		vscode.commands.registerCommand('dexter.setCodexResLength', async () => {
 			await vscode.window.showInputBox({
