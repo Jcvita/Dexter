@@ -73,7 +73,7 @@ export function activate(context: vscode.ExtensionContext) {
 					}
 				});
 				// vscode.window.showInformationMessage(`Added ${selections.length} ${selections.length === 1 ? 'line' : 'lines'}. Total: ${codex.getContext().split('\n')}`)
-				vscode.window.showInformationMessage(`Added context from ${selections.length} selections`)
+				vscode.window.showInformationMessage(`Added context from ${selections.length} selections`);
 			}
 		})
 	);
@@ -84,27 +84,27 @@ export function activate(context: vscode.ExtensionContext) {
 			codex.clearQueries();
 			codex.clearStopSequences();
 		})
-	)
+	);
 
 	function appendTextAfterLine(text: string, selection: vscode.Selection) {
 		vscode.commands.registerTextEditorCommand('dexter.insertText', function (editor, edit, args) {
-			const currentLine = editor.document.lineAt(selection.start.line)
-			edit.insert(currentLine.range.end, '\n')
+			const currentLine = editor.document.lineAt(selection.start.line);
+			edit.insert(currentLine.range.end, '\n');
 			edit.insert(currentLine.range.start.translate(1), text);
-		})
+		});
 	}
 
 	function replaceTextAtSelection(text: string, selection: vscode.Selection) {
 		vscode.commands.registerTextEditorCommand('dexter.insertText', function (editor, edit, args) {
 			edit.replace(selection.active, text);
-		})
+		});
 	} 
 	context.subscriptions.push(
 		vscode.commands.registerCommand('dexter.showCodexContext', () => {
 			vscode.window.showInformationMessage(codex.getContext());
 			vscode.window.showInformationMessage(`Response Length: ${codex.resLength} \nTemperature: ${codex.temp} \nTop P: ${codex.topp} \nFrequency Penalty: ${codex.freqPenalty} \nPresence Penalty: ${codex.presPenalty} \n Best of: ${codex.bestOf} \nStop Sequences: ${codex.stopSequences?.join(',')}`)
 		})
-	)
+	);
 	context.subscriptions.push(
 		vscode.commands.registerCommand('dexter.runCodeCompletion', async () => {
 			const key = vscode.workspace.getConfiguration('dexter').get('apiKey', false);
@@ -113,11 +113,11 @@ export function activate(context: vscode.ExtensionContext) {
 					title: "Set the OpenAI API key"
 				}).then(input => {
 					vscode.workspace.getConfiguration('dexter').update('apiKey', input);	
-				})
+				});
 			} else {
 				const editor = vscode.window.activeTextEditor;
 				if (!editor) {
-					vscode.window.showInformationMessage("No open editor")
+					vscode.window.showInformationMessage("No open editor");
 				} else {
 					const selections = editor.selections;
 					const sameCompletion = vscode.workspace.getConfiguration('dexter').get('sameCompletion');
@@ -126,7 +126,7 @@ export function activate(context: vscode.ExtensionContext) {
 						if (result.includes('UNAUTHORIZED')){ //displayed if no output is generated (complete returns empty list)
 							vscode.window.showErrorMessage('Bad API key');
 						} else if (result.includes('ERROR')) {
-							vscode.window.showInformationMessage('One or more errors occurred ')
+							vscode.window.showInformationMessage('One or more errors occurred ');
 						}
 						selections.sort((a, b) => { return a.active.compareTo(b.active); })
 						.reverse().forEach((selection, index) => {
@@ -137,9 +137,9 @@ export function activate(context: vscode.ExtensionContext) {
 							} else {
 								codex.complete().then(result => {
 									appendTextAfterLine(result[index] || '', selection);
-								})
+								});
 							}
-						})
+						});
 						return;
 					});
 				}
@@ -154,11 +154,11 @@ export function activate(context: vscode.ExtensionContext) {
 					title: "Set the OpenAI API key"
 				}).then(input => {
 					vscode.workspace.getConfiguration('dexter').update('apiKey', input);	
-				})
+				});
 			} else {
 				const editor = vscode.window.activeTextEditor;
 				if (!editor) {
-					vscode.window.showInformationMessage("No open editor")
+					vscode.window.showInformationMessage("No open editor");
 				} else {
 					const selections = editor.selections;
 					const sameCompletion = vscode.workspace.getConfiguration('dexter').get('sameCompletion');
@@ -173,7 +173,7 @@ export function activate(context: vscode.ExtensionContext) {
 						if (result.includes('UNAUTHORIZED')){ //displayed if no output is generated (complete returns empty list)
 							vscode.window.showErrorMessage('Bad API key');
 						} else if (result.includes('ERROR')) {
-							vscode.window.showInformationMessage('One or more errors occurred ')
+							vscode.window.showInformationMessage('One or more errors occurred ');
 						}
 						selections.sort((a, b) => { return a.active.compareTo(b.active); })
 						.reverse().forEach((selection, index) => {
@@ -183,7 +183,7 @@ export function activate(context: vscode.ExtensionContext) {
 							} else {
 								codex.complete().then(result => {
 									replaceTextAtSelection(result[index] || '', selection);
-								})
+								});
 							}
 						})
 						return;
@@ -200,7 +200,7 @@ export function activate(context: vscode.ExtensionContext) {
 				validateInput: text => {
 					const num = +text;
 					if (num > 0 && num < 4097) {
-						return text
+						return text;
 					}
 				}
 			}).then(input => {
