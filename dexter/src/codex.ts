@@ -1,17 +1,17 @@
 export class Codex {
     key: string;
-    context?: string = '';
-    queries?: string[] = [];
-    resLength?: number = 64;
-    temp?: number = 0;
-    topp?: number = 1;
-    freqPenalty?: number = 0;
-    presPenalty?: number = 0;
-    bestOf?: number = 1;
+    context: string = '';
+    queries: string[] = [];
+    resLength: number = 64;
+    temp: number = 0;
+    topp: number = 1;
+    freqPenalty: number = 0;
+    presPenalty: number = 0;
+    bestOf: number = 1;
     stopSequences?: string[];
-    injectStart?: string = '';
-    injectRestart?: string = '';
-    engine?: string = 'davinci-codex';
+    injectStart: string = '';
+    injectRestart: string = '';
+    engine: string = 'davinci-codex';
     
     constructor(apiKey: string) {
         this.key = apiKey;
@@ -34,7 +34,7 @@ export class Codex {
     }
 
     addQuery(query: string) {
-        this.queries?.push(query) ;
+        this.queries.push(query) ;
     }
 
     clearQueries() {
