@@ -98,7 +98,7 @@ export class Codex {
     setStopSequences(sequence: string){
         if (sequence.length === 0) {
             this.stopSequences = [];
-            return
+            return;
         }
         this.stopSequences = sequence.split("/|").filter(function (val, index) {
             return index < 4;
@@ -110,8 +110,33 @@ export class Codex {
     }
 
     getStopSequences() {
-        return this.stopSequences;
+        return this.stopSequences || [];
     }
+
+    getResLength() {
+        return this.resLength;
+    }
+
+    getTemp() {
+        return this.temp;
+    }
+
+    getTopp() {
+        return this.topp;
+    }
+
+    getFreqPenalty() {
+        return this.freqPenalty;
+    }
+
+    getPresPenalty() {
+        return this.presPenalty;
+    }
+
+    getBestOf() {
+        return this.bestOf;
+    }
+
 
     async complete() {
         const headers = {
@@ -131,7 +156,7 @@ export class Codex {
                 "stream": false,
                 "logprobs": null,
                 "stop": this.stopSequences
-            }
+            };
             requests.push(fetch('https://api.openai.com/v1/engines/davinci-codex/completions', {
                 method: "POST",
                 headers: headers,
@@ -152,7 +177,7 @@ export class Codex {
                 } else {
                     strings.push('ERROR');
                     await value.json().then((body) => {
-                        strings.push(`${value.status} - ${body.error.message}`)
+                        strings.push(`${value.status} - ${body.error.message}`);
                     }).catch();
                 }
             });           

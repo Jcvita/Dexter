@@ -102,7 +102,7 @@ export function activate(context: vscode.ExtensionContext) {
 	context.subscriptions.push(
 		vscode.commands.registerCommand('dexter.showCodexContext', () => {
 			vscode.window.showInformationMessage(codex.getContext());
-			vscode.window.showInformationMessage(`Response Length: ${codex.resLength} \nTemperature: ${codex.temp} \nTop P: ${codex.topp} \nFrequency Penalty: ${codex.freqPenalty} \nPresence Penalty: ${codex.presPenalty} \n Best of: ${codex.bestOf} \nStop Sequences: ${codex.stopSequences?.join(',')}`)
+			vscode.window.showInformationMessage(`Response Length: ${codex.getResLength()} \nTemperature: ${codex.getTemp()} \nTop P: ${codex.getTopp()} \nFrequency Penalty: ${codex.getFreqPenalty()} \nPresence Penalty: ${codex.getPresPenalty()} \n Best of: ${codex.bestOf} \nStop Sequences: ${codex.getStopSequences().join(',')}`);
 		})
 	);
 	context.subscriptions.push(
@@ -185,13 +185,13 @@ export function activate(context: vscode.ExtensionContext) {
 									replaceTextAtSelection(result[index] || '', selection);
 								});
 							}
-						})
+						});
 						return;
 					});
 				}
 			}
 		})
-	)
+	);
 	context.subscriptions.push(
 		vscode.commands.registerCommand('dexter.setCodexResLength', async () => {
 			await vscode.window.showInputBox({
