@@ -6,11 +6,24 @@ import { Codex } from './codex';
 // this method is called when your extension is activated
 // your extension is activated the very first time the command is executed
 export function activate(context: vscode.ExtensionContext) {
-	let codex: Codex;
+	let codex: Codex = new Codex();
 	// Use the console to output diagnostic information (console.log) and errors (console.error)
 	// This line of code will only be executed once when your extension is activated
 	
+	
 	console.log('Congratulations, your extension "dexter" is now active!');
+	
+	const config = vscode.workspace.getConfiguration('dexter');
+	console.log("api key: " + config.get('apiKey', ''))
+	codex.insertAPIKey(config.get('apiKey', ''));
+	codex.setStopSequences(config.get("stopSequences", ""));
+	codex.setBestOf(config.get("bestOf", 1));
+	codex.setPresPenalty(config.get("presencePenalty", 0));
+	codex.setFreqPenalty(config.get("frequencyPenalty", 0));
+	codex.setTopp(config.get("topP", 1));
+	codex.setTemp(config.get("temperature", 0));
+	codex.setResLength(config.get("responseLength", 64));
+	codex.setEngine(config.get("engine", ""));
 
 	// The command has been defined in the package.json file
 	// Now provide the implementation of the command with registerCommand
@@ -20,39 +33,39 @@ export function activate(context: vscode.ExtensionContext) {
 		//use else ifs if each change is recorded individually. if multiple changes occur at once, uses ifs
 		const config = vscode.workspace.getConfiguration('dexter');
 		if (cfg.affectsConfiguration("dexter.apiKey")) {
-			codex = new Codex(config.get('apiKey', ''));
-			codex.setStopSequences(config.get("dexter.stopSequences", ""));
-			codex.setBestOf(config.get("dexter.bestOf", 1));
-			codex.setPresPenalty(config.get("dexter.presencePenalty", 0));
-			codex.setFreqPenalty(config.get("dexter.frequencyPenalty", 0));
-			codex.setTopp(config.get("dexter.topP", 1));
-			codex.setTemp(config.get("dexter.temperature", 0));
-			codex.setResLength(config.get("dexter.responseLength", 64));
-			codex.setEngine(config.get("dexter.engine", ""));
+			codex.insertAPIKey(config.get('apiKey', ''));
+			// codex.setStopSequences(config.get("stopSequences", ""));
+			// codex.setBestOf(config.get("bestOf", 1));
+			// codex.setPresPenalty(config.get("presencePenalty", 0));
+			// codex.setFreqPenalty(config.get("frequencyPenalty", 0));
+			// codex.setTopp(config.get("topP", 1));
+			// codex.setTemp(config.get("temperature", 0));
+			// codex.setResLength(config.get("responseLength", 64));
+			// codex.setEngine(config.get("engine", ""));
 		}
 		if (cfg.affectsConfiguration("dexter.engine")) {
-			codex.setEngine(config.get("dexter.engine", ""));
+			codex.setEngine(config.get("engine", ""));
 		}
 		if (cfg.affectsConfiguration("dexter.responseLength")) {
-			codex.setResLength(config.get("dexter.responseLength", 64));
+			codex.setResLength(config.get("responseLength", 64));
 		}
 		if (cfg.affectsConfiguration("dexter.temperature")) {
-			codex.setTemp(config.get("dexter.temperature", 0));
+			codex.setTemp(config.get("temperature", 0));
 		}
 		if (cfg.affectsConfiguration("dexter.topP")) {
-			codex.setTopp(config.get("dexter.topP", 1));
+			codex.setTopp(config.get("topP", 1));
 		}
 		if (cfg.affectsConfiguration("dexter.frequencyPenalty")) {
-			codex.setFreqPenalty(config.get("dexter.frequencyPenalty", 0));
+			codex.setFreqPenalty(config.get("frequencyPenalty", 0));
 		}
 		if (cfg.affectsConfiguration("dexter.presencePenalty")) {
-			codex.setPresPenalty(config.get("dexter.presencePenalty", 0));
+			codex.setPresPenalty(config.get("presencePenalty", 0));
 		}
 		if (cfg.affectsConfiguration("dexter.bestOf")) {
-			codex.setBestOf(config.get("dexter.bestOf", 1));
+			codex.setBestOf(config.get("bestOf", 1));
 		}
 		if (cfg.affectsConfiguration("dexter.stopSequences")) {
-			codex.setStopSequences(config.get("dexter.stopSequences", ""));
+			codex.setStopSequences(config.get("stopSequences", ""));
 		}
 	}));
 
@@ -87,24 +100,33 @@ export function activate(context: vscode.ExtensionContext) {
 	);
 
 	function appendTextAfterLine(text: string, selection: vscode.Selection) {
-		vscode.commands.registerTextEditorCommand('dexter.insertText', function (editor, edit, args) {
+		const editor = vscode.window.activeTextEditor;
+		if (editor) {
 			const currentLine = editor.document.lineAt(selection.start.line);
-			edit.insert(currentLine.range.end, '\n');
-			edit.insert(currentLine.range.start.translate(1), text);
-		});
+			editor.edit(edit => {
+				edit.insert(currentLine.range.end, '\n');
+				edit.insert(currentLine.range.start.translate(1), text);
+			});
+		}
 	}
 
 	function replaceTextAtSelection(text: string, selection: vscode.Selection) {
-		vscode.commands.registerTextEditorCommand('dexter.insertText', function (editor, edit, args) {
-			edit.replace(selection.active, text);
-		});
-	} 
+		const editor = vscode.window.activeTextEditor;
+		if (editor) {
+			editor.edit(edit => {
+				edit.replace(selection.active, text);
+			});
+		}
+	}
+
 	context.subscriptions.push(
 		vscode.commands.registerCommand('dexter.showCodexContext', () => {
-			vscode.window.showInformationMessage(codex.getContext());
+			vscode.window.showInformationMessage(`API Key: ${codex.getAPIKey()}`);
 			vscode.window.showInformationMessage(`Response Length: ${codex.getResLength()} \nTemperature: ${codex.getTemp()} \nTop P: ${codex.getTopp()} \nFrequency Penalty: ${codex.getFreqPenalty()} \nPresence Penalty: ${codex.getPresPenalty()} \n Best of: ${codex.bestOf} \nStop Sequences: ${codex.getStopSequences().join(',')}`);
+			vscode.window.showInformationMessage(codex.getContext());
 		})
 	);
+
 	context.subscriptions.push(
 		vscode.commands.registerCommand('dexter.runCodeCompletion', async () => {
 			const key = vscode.workspace.getConfiguration('dexter').get('apiKey', false);
@@ -123,6 +145,8 @@ export function activate(context: vscode.ExtensionContext) {
 					const sameCompletion = vscode.workspace.getConfiguration('dexter').get('sameCompletion');
 
 					await codex.complete().then(result => {
+						console.log("Completion Results:")
+						console.log(result)
 						if (result.includes('UNAUTHORIZED')){ //displayed if no output is generated (complete returns empty list)
 							vscode.window.showErrorMessage('Bad API key');
 						} else if (result.includes('ERROR')) {

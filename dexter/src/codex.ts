@@ -1,5 +1,7 @@
+import axios, {AxiosError, AxiosResponse} from "axios";
+
 export class Codex {
-    key: string;
+    key: string = '';
     context: string = '';
     queries: string[] = [];
     resLength: number = 64;
@@ -13,7 +15,11 @@ export class Codex {
     injectRestart: string = '';
     engine: string = 'davinci-codex';
     
-    constructor(apiKey: string) {
+    constructor() {
+
+    }
+
+    insertAPIKey(apiKey: string){
         this.key = apiKey;
     }
 
@@ -137,6 +143,9 @@ export class Codex {
         return this.bestOf;
     }
 
+    getAPIKey() {
+        return this.key;
+    }
 
     async complete() {
         const headers = {
@@ -144,9 +153,9 @@ export class Codex {
             'Authorization': `Bearer ${this.key}`
         };
 
-        var requests: Promise<Response>[] = [];
-
-        this.queries?.forEach(async (query) => {
+        var requests: Promise<AxiosResponse>[] = [];
+        
+        this.queries.forEach(async (query) => {
             const data = {
                 "prompt": this.context + '\n\n' + query,
                 "max_tokens": this.resLength,
@@ -157,34 +166,32 @@ export class Codex {
                 "logprobs": null,
                 "stop": this.stopSequences
             };
-            requests.push(fetch('https://api.openai.com/v1/engines/davinci-codex/completions', {
+
+            requests.push(axios.post('https://api.openai.com/v1/engines/davinci-codex/completions', {
                 method: "POST",
                 headers: headers,
                 body: JSON.stringify(data)
-            }));
-        });
+            }).catch())
+        })
+            
+        console.log(requests)
 
         var strings: string[] = [];
 
         await Promise.all(requests).then((values) => {
-            values.forEach(async (value) => {
-                if (value.status === 200) {
-                    await value.json().then((body) => {
-                        strings.push(body.choices[0].text);
-                    }).catch();
-                } else if (value.status === 401) {
-                    strings.push('UNAUTHORIZED');
+            values.forEach(async (res) => {
+                if (res.status === 200) {
+                    strings.push(res.data.choices[0].text)
+                } else if (res.status === 401) {
+                    strings.push('401 UNAUTHORIZED - Bad Key?');
                 } else {
-                    strings.push('ERROR');
-                    await value.json().then((body) => {
-                        strings.push(`${value.status} - ${body.error.message}`);
-                    }).catch();
+                    // strings.push('ERROR');
+                    strings.push(`${res.status} - ${res.data.error.message}`);
                 }
-            });           
-        });
-
-        this.clearQueries();
-        return strings;
+            });
         
+        }).then(undefined, console.error);
+        this.clearQueries();
+        return strings;   
     }
 }
