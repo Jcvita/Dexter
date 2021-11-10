@@ -94,7 +94,7 @@
 					"description": "How much to penalize new tokens based on whether they appear in the text. (0-2 Def. 0)"
 				},
 				"dexter.bestOf": {
-					"type": "integer",
+					"type": "string",
 					"default": "1",
 					"description": "Generates multiple queries and picks the best one (1-20 Def. 1)"
 				},

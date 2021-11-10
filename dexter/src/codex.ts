@@ -1,8 +1,7 @@
-import axios, {AxiosError, AxiosResponse} from "axios";
-import internal = require("stream");
-import { getHeapCodeStatistics } from "v8";
+import axios, {AxiosResponse} from "axios";
 
-function createReqData(prompt: string, max_tokens: number, temperature: number, top_p: number, n: number, stream: boolean, logprobs: null, stop: string[]): Object {
+function createReqData(prompt: string, max_tokens: number, temperature: number, top_p: number, bestof: string, stream: boolean, logprobs: null, stop: string[]): Object {
+    const n = +bestof;
     if (stop.length > 0){ 
         return {
             prompt,
@@ -27,6 +26,10 @@ function createReqData(prompt: string, max_tokens: number, temperature: number, 
     }
 } 
 
+function isNumeric(value: string) {
+    return /^-?\d+$/.test(value);
+}
+
 export class Codex {
     key: string = '';
     context: string = '';
@@ -36,7 +39,7 @@ export class Codex {
     topp: number = 1;
     freqPenalty: number = 0;
     presPenalty: number = 0;
-    bestOf: number = 1;
+    bestOf: string = '1';
     stopSequences: string[] = [];
     injectStart: string = '';
     injectRestart: string = '';
@@ -74,8 +77,13 @@ export class Codex {
         this.queries = [];
     }
 
-    setBestOf(bestOf: number) {
-        this.bestOf = bestOf;
+    setBestOf(bestOf: string) {
+        if (isNumeric(bestOf)){
+            this.bestOf = bestOf;
+        } else {
+            this.bestOf = '1'
+        }
+
     }
 
     setResLength(length: number) {
@@ -175,15 +183,16 @@ export class Codex {
     }
 
     async complete() {
-        const headers = {
-            'Content-Type': 'application/json',
-            'Authorization': `Bearer ${this.key}`
-        };
-
+        let config = {
+            headers: {
+                'Content-Type': 'application/json',
+                'Authorization': `Bearer ${this.key}`
+            }
+        }
         var requests: Promise<AxiosResponse>[] = [];
         
         console.log("Headers:")
-        console.log(headers);
+        console.log(config);
         console.log("Queries:")
         console.log(this.queries);
 
@@ -192,11 +201,7 @@ export class Codex {
 
             console.log("Request Data: ")
             console.log(data);
-            requests.push(axios.post('https://api.openai.com/v1/engines/davinci-codex/completions', {
-                method: "POST",
-                headers: headers,
-                body: JSON.stringify(data)
-            }).catch())
+            requests.push(axios.post('https://api.openai.com/v1/engines/davinci-codex/completions', data, config).catch())
         })
             
         console.log(requests)

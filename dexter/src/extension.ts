@@ -1,5 +1,6 @@
 // The module 'vscode' contains the VS Code extensibility API
 // Import the module and reference it with the alias vscode in your code below
+import internal = require('stream');
 import * as vscode from 'vscode';
 import { Codex } from './codex';
 
@@ -17,7 +18,7 @@ export function activate(context: vscode.ExtensionContext) {
 	console.log("api key: " + config.get('apiKey', ''))
 	codex.insertAPIKey(config.get('apiKey', ''));
 	codex.setStopSequences(config.get("stopSequences", ""));
-	codex.setBestOf(config.get("bestOf", 1));
+	codex.setBestOf(config.get("bestOf", "1")); //this is a string because of a weird glitch that is causing it to pass as a string to the request. conversion fixes it???
 	codex.setPresPenalty(config.get("presencePenalty", 0));
 	codex.setFreqPenalty(config.get("frequencyPenalty", 0));
 	codex.setTopp(config.get("topP", 1));
@@ -62,7 +63,7 @@ export function activate(context: vscode.ExtensionContext) {
 			codex.setPresPenalty(config.get("presencePenalty", 0));
 		}
 		if (cfg.affectsConfiguration("dexter.bestOf")) {
-			codex.setBestOf(config.get("bestOf", 1));
+			codex.setBestOf(config.get("bestOf", "1"));
 		}
 		if (cfg.affectsConfiguration("dexter.stopSequences")) {
 			codex.setStopSequences(config.get("stopSequences", ""));
@@ -119,6 +120,7 @@ export function activate(context: vscode.ExtensionContext) {
 		}
 	}
 
+	//TODO hide api key from this 
 	context.subscriptions.push(
 		vscode.commands.registerCommand('dexter.showCodexContext', () => {
 			vscode.window.showInformationMessage(`API Key: ${codex.getAPIKey()}`);
@@ -127,6 +129,7 @@ export function activate(context: vscode.ExtensionContext) {
 		})
 	);
 
+	//TODO this doesn't work
 	context.subscriptions.push(
 		vscode.commands.registerCommand('dexter.runCodeCompletion', async () => {
 			const key = vscode.workspace.getConfiguration('dexter').get('apiKey', false);
@@ -170,6 +173,8 @@ export function activate(context: vscode.ExtensionContext) {
 			}
 		})
 	);
+
+	// BUT THIS DOES WORK HYPEEE. make an indication that it is thinking and tell the user not to move the cursor
 	context.subscriptions.push(
 		vscode.commands.registerCommand('dexter.insertCodeCompletion', async () => {
 			const key = vscode.workspace.getConfiguration('dexter').get('apiKey', false);
@@ -237,6 +242,7 @@ export function activate(context: vscode.ExtensionContext) {
 		})
 	);
 
+	//TODO this doesn't work
 	context.subscriptions.push(
 		vscode.commands.registerCommand('dexter.setStopSequences', async () => {
 			await vscode.window.showInputBox({
