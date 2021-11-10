@@ -1,4 +1,31 @@
 import axios, {AxiosError, AxiosResponse} from "axios";
+import internal = require("stream");
+import { getHeapCodeStatistics } from "v8";
+
+function createReqData(prompt: string, max_tokens: number, temperature: number, top_p: number, n: number, stream: boolean, logprobs: null, stop: string[]): Object {
+    if (stop.length > 0){ 
+        return {
+            prompt,
+            max_tokens,
+            temperature,
+            top_p,
+            n,
+            stream,
+            logprobs,
+            stop
+        }
+    } else {
+        return {
+            prompt,
+            max_tokens,
+            temperature,
+            top_p,
+            n,
+            stream,
+            logprobs
+        }
+    }
+} 
 
 export class Codex {
     key: string = '';
@@ -10,7 +37,7 @@ export class Codex {
     freqPenalty: number = 0;
     presPenalty: number = 0;
     bestOf: number = 1;
-    stopSequences?: string[];
+    stopSequences: string[] = [];
     injectStart: string = '';
     injectRestart: string = '';
     engine: string = 'davinci-codex';
@@ -155,18 +182,16 @@ export class Codex {
 
         var requests: Promise<AxiosResponse>[] = [];
         
-        this.queries.forEach(async (query) => {
-            const data = {
-                "prompt": this.context + '\n\n' + query,
-                "max_tokens": this.resLength,
-                "temperature": this.temp,
-                "top_p": this.topp,
-                "n": this.bestOf,
-                "stream": false,
-                "logprobs": null,
-                "stop": this.stopSequences
-            };
+        console.log("Headers:")
+        console.log(headers);
+        console.log("Queries:")
+        console.log(this.queries);
 
+        this.queries.forEach(async (query) => {
+            var data = createReqData(this.context + '\n\n' + query, this.resLength, this.temp, this.topp, this.bestOf, false, null, this.stopSequences);            
+
+            console.log("Request Data: ")
+            console.log(data);
             requests.push(axios.post('https://api.openai.com/v1/engines/davinci-codex/completions', {
                 method: "POST",
                 headers: headers,
